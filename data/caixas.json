@@ -1,0 +1,21 @@
+{
+  "fechadas": [],
+  "atual": {
+    "numero": 1,
+    "pecas": [
+      {
+        "id": "0034",
+        "peso": 96.0,
+        "cor": "azul",
+        "comprimento": 15.0,
+        "usuario": "admin",
+        "timestamp": "13/11/2025 21:15:51",
+        "aprovada": true,
+        "motivos_reprovacao": []
+      }
+    ],
+    "data_fechamento": null,
+    "usuario_fechamento": "",
+    "quantidade_pecas": 1
+  }
+}
