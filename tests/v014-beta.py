@@ -1756,7 +1756,8 @@ Data: {peca.timestamp}
         
         dialog = ctk.CTkToplevel(self.root)
         dialog.title("➕ Novo Usuário")
-        dialog.geometry("500x550")
+        dialog.geometry("1200x800")
+        dialog.minsize(1000, 700)
         dialog.transient(self.root)
         dialog.grab_set()
         

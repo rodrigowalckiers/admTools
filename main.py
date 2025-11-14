@@ -1950,7 +1950,8 @@ class TelaPrincipal:
         """Cria interface para novo usuário"""
         janela = ctk.CTkToplevel(self.root)
         janela.title("Novo Usuário")
-        janela.geometry("400x500")
+        janela.geometry("1200x800")
+        janela.minsize(1000, 700)
         janela.transient(self.root)
         janela.grab_set()
         
