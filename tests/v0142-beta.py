@@ -1,6 +1,6 @@
 """
 Sistema de Controle de Qualidade Industrial
-Versão 2.1 - Com Gestão de Usuários e CRUD Completo
+Versão 2.2 - Corrigida e Melhorada
 """
 
 import subprocess
@@ -115,6 +115,10 @@ class ConfiguracaoSistema:
     
     # Configurações padrão
     CONFIG_PADRAO = {
+        'sistema': {
+            'nome_sistema': 'Sistema de Controle de Qualidade Industrial',
+            'versao': '2.2'
+        },
         'critérios_qualidade': {
             'peso_min': 95,
             'peso_max': 105,
@@ -311,7 +315,8 @@ class SistemaAutenticacao:
             senha = self.usuarios[usuario_antigo]['senha']
             
             # Remover o usuário antigo e adicionar com novos dados
-            del self.usuarios[usuario_antigo]
+            if usuario_antigo != usuario_novo:
+                del self.usuarios[usuario_antigo]
             
             self.usuarios[usuario_novo] = {
                 'senha': senha,
@@ -379,7 +384,7 @@ class SistemaAutenticacao:
         return usuarios_lista
 
 # ====================================================================================
-# MODELOS DE DADOS MELHORADOS
+# MODELOS DE DADOS (mantidos iguais)
 # ====================================================================================
 
 class Peca:
@@ -905,9 +910,11 @@ class TelaLogin:
         self.root = root
         self.on_login_success = on_login_success
         self.auth = SistemaAutenticacao()
+        self.config = ConfiguracaoSistema.carregar_configuracao()
         
         # Configurar janela CORRIGIDA
-        self.root.title("Sistema de Controle de Qualidade Industrial - Login")
+        nome_sistema = self.config.get('sistema', {}).get('nome_sistema', 'Sistema de Controle de Qualidade Industrial')
+        self.root.title(f"{nome_sistema} - Login")
         self.root.geometry("500x600")
         self.root.resizable(False, False)
         self.centralizar_janela()
@@ -952,10 +959,11 @@ class TelaLogin:
         )
         titulo.pack(pady=(40, 10))
         
+        nome_sistema = self.config.get('sistema', {}).get('nome_sistema', 'Sistema de Controle de Qualidade Industrial')
         titulo2 = ctk.CTkLabel(
             container,
-            text="Sistema de Controle\nde Qualidade Industrial",
-            font=ctk.CTkFont(size=20, weight="bold"),
+            text=nome_sistema,
+            font=ctk.CTkFont(size=16, weight="bold"),
             text_color="white",
             justify="center"
         )
@@ -1030,13 +1038,14 @@ class TelaLogin:
         info.pack(pady=(10, 20))
         
         # Versão
-        versao = ctk.CTkLabel(
+        versao = self.config.get('sistema', {}).get('versao', '2.2')
+        versao_label = ctk.CTkLabel(
             container,
-            text="v2.1 - Com Gestão de Usuários",
+            text=f"v{versao} - Sistema Corrigido e Melhorado",
             font=ctk.CTkFont(size=10),
             text_color="#e0e0e0"
         )
-        versao.pack(pady=10)
+        versao_label.pack(pady=10)
     
     def fazer_login(self):
         """Processa o login - MELHORADO"""
@@ -1066,9 +1075,11 @@ class TelaPrincipal:
         self.info_usuario = info_usuario
         self.db = BancoDados()
         self.auth = SistemaAutenticacao()
+        self.config = ConfiguracaoSistema.carregar_configuracao()
         
         # Configurar janela CORRIGIDA
-        self.root.title(f"Sistema de Controle de Qualidade Industrial - {info_usuario['nome_completo']}")
+        nome_sistema = self.config.get('sistema', {}).get('nome_sistema', 'Sistema de Controle de Qualidade Industrial')
+        self.root.title(f"{nome_sistema} - {info_usuario['nome_completo']}")
         self.root.geometry("1200x800")
         self.root.minsize(1000, 700)
         self.centralizar_janela()
@@ -1102,9 +1113,10 @@ class TelaPrincipal:
         titulo_frame = ctk.CTkFrame(header, fg_color="transparent")
         titulo_frame.pack(side="left", fill="both", expand=True, padx=20, pady=10)
         
+        nome_sistema = self.config.get('sistema', {}).get('nome_sistema', 'Sistema de Controle de Qualidade Industrial')
         ctk.CTkLabel(
             titulo_frame,
-            text="🏭 Sistema de Controle de Qualidade Industrial",
+            text=nome_sistema,
             font=ctk.CTkFont(size=22, weight="bold"),
             text_color="white"
         ).pack(anchor="w")
@@ -1285,6 +1297,8 @@ class TelaPrincipal:
         except:
             pass
         return cor
+
+    # ... (mantenha as funções existentes como tela_cadastrar_peca, tela_gerenciar_pecas, etc.)
     
     def tela_cadastrar_peca(self):
         """Tela de cadastro de nova peça - MELHORADA"""
@@ -1453,202 +1467,6 @@ class TelaPrincipal:
             hover_color="#7f8c8d"
         ).pack(side="left", padx=10)
     
-    def tela_gerenciar_pecas(self):
-        """Tela de gerenciamento CRUD de peças - NOVA"""
-        self.limpar_tela()
-        self.criar_header("🔧 Gerenciar Peças (CRUD)")
-        
-        main_frame = ctk.CTkFrame(self.frame_principal)
-        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Frame de busca
-        busca_frame = ctk.CTkFrame(main_frame)
-        busca_frame.pack(fill="x", padx=10, pady=10)
-        
-        ctk.CTkLabel(
-            busca_frame,
-            text="🔍 Buscar Peça por ID:",
-            font=ctk.CTkFont(size=14, weight="bold")
-        ).pack(side="left", padx=10)
-        
-        entry_busca = ctk.CTkEntry(
-            busca_frame,
-            width=200,
-            height=35,
-            placeholder_text="Digite o ID da peça"
-        )
-        entry_busca.pack(side="left", padx=10)
-        
-        btn_buscar = ctk.CTkButton(
-            busca_frame,
-            text="Buscar",
-            width=100,
-            height=35,
-            command=lambda: self.buscar_peca_edicao(entry_busca.get(), form_frame)
-        )
-        btn_buscar.pack(side="left", padx=10)
-        
-        # Frame do formulário de edição
-        form_frame = ctk.CTkFrame(main_frame)
-        form_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Mensagem inicial
-        ctk.CTkLabel(
-            form_frame,
-            text="Digite um ID de peça para editar ou excluir",
-            font=ctk.CTkFont(size=14),
-            text_color="#666666"
-        ).pack(pady=50)
-        
-        # Botão voltar
-        ctk.CTkButton(
-            main_frame,
-            text="🔙 Voltar ao Menu",
-            width=200,
-            height=45,
-            command=self.criar_menu_principal,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#95a5a6"
-        ).pack(pady=10)
-    
-    def buscar_peca_edicao(self, id_peca: str, form_frame: ctk.CTkFrame):
-        """Busca peça para edição"""
-        if not id_peca:
-            messagebox.showerror("Erro", "Digite um ID para buscar!")
-            return
-        
-        # Limpar formulário
-        for widget in form_frame.winfo_children():
-            widget.destroy()
-        
-        # Buscar peça
-        peca_encontrada = None
-        for peca in self.db.pecas_aprovadas + self.db.pecas_reprovadas:
-            if peca.id_peca == id_peca.upper():
-                peca_encontrada = peca
-                break
-        
-        if not peca_encontrada:
-            ctk.CTkLabel(
-                form_frame,
-                text=f"Peça {id_peca} não encontrada!",
-                font=ctk.CTkFont(size=14),
-                text_color="#e74c3c"
-            ).pack(pady=50)
-            return
-        
-        # Exibir formulário de edição
-        ctk.CTkLabel(
-            form_frame,
-            text=f"Editando Peça: {peca_encontrada.id_peca}",
-            font=ctk.CTkFont(size=16, weight="bold")
-        ).pack(pady=10)
-        
-        # Status
-        status = "✅ APROVADA" if peca_encontrada.aprovada else "❌ REPROVADA"
-        ctk.CTkLabel(
-            form_frame,
-            text=f"Status: {status}",
-            font=ctk.CTkFont(size=14),
-            text_color="#2ecc71" if peca_encontrada.aprovada else "#e74c3c"
-        ).pack(pady=5)
-        
-        # Campos de edição
-        campos_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
-        campos_frame.pack(pady=20, padx=50, fill="both", expand=True)
-        
-        # Peso
-        ctk.CTkLabel(campos_frame, text="Peso (g):", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        entry_peso = ctk.CTkEntry(campos_frame, width=300, height=40)
-        entry_peso.insert(0, str(peca_encontrada.peso))
-        entry_peso.pack(fill="x", pady=5)
-        
-        # Cor
-        ctk.CTkLabel(campos_frame, text="Cor:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        combo_cor = ctk.CTkComboBox(
-            campos_frame, 
-            width=300, 
-            height=40,
-            values=["azul", "verde", "vermelho", "amarelo", "preto", "branco", "cinza", "laranja"]
-        )
-        combo_cor.set(peca_encontrada.cor)
-        combo_cor.pack(fill="x", pady=5)
-        
-        # Comprimento
-        ctk.CTkLabel(campos_frame, text="Comprimento (cm):", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        entry_comp = ctk.CTkEntry(campos_frame, width=300, height=40)
-        entry_comp.insert(0, str(peca_encontrada.comprimento))
-        entry_comp.pack(fill="x", pady=5)
-        
-        # Botões de ação
-        btn_frame = ctk.CTkFrame(campos_frame, fg_color="transparent")
-        btn_frame.pack(pady=30)
-        
-        def salvar_edicao():
-            try:
-                novo_peso = float(entry_peso.get().replace(',', '.'))
-                nova_cor = combo_cor.get()
-                novo_comp = float(entry_comp.get().replace(',', '.'))
-                
-                sucesso, mensagem = self.db.editar_peca(
-                    peca_encontrada.id_peca, novo_peso, nova_cor, novo_comp
-                )
-                
-                if sucesso:
-                    messagebox.showinfo("Sucesso", mensagem)
-                    self.criar_menu_principal()
-                else:
-                    messagebox.showerror("Erro", mensagem)
-                    
-            except ValueError:
-                messagebox.showerror("Erro", "Peso e comprimento devem ser números válidos!")
-            except Exception as e:
-                messagebox.showerror("Erro", f"Erro inesperado: {str(e)}")
-        
-        def excluir_peca():
-            resposta = messagebox.askyesno(
-                "Confirmar Exclusão",
-                f"Tem certeza que deseja excluir a peça {peca_encontrada.id_peca}?\n\nEsta ação não pode ser desfeita!"
-            )
-            
-            if resposta:
-                sucesso, mensagem = self.db.remover_peca(peca_encontrada.id_peca)
-                if sucesso:
-                    messagebox.showinfo("Sucesso", mensagem)
-                    self.criar_menu_principal()
-                else:
-                    messagebox.showerror("Erro", mensagem)
-        
-        ctk.CTkButton(
-            btn_frame,
-            text="💾 Salvar Alterações",
-            width=180,
-            height=45,
-            command=salvar_edicao,
-            font=ctk.CTkFont(size=13, weight="bold"),
-            fg_color="#2ecc71"
-        ).pack(side="left", padx=5)
-        
-        ctk.CTkButton(
-            btn_frame,
-            text="🗑️ Excluir Peça",
-            width=180,
-            height=45,
-            command=excluir_peca,
-            font=ctk.CTkFont(size=13, weight="bold"),
-            fg_color="#e74c3c"
-        ).pack(side="left", padx=5)
-        
-        ctk.CTkButton(
-            btn_frame,
-            text="🔙 Cancelar",
-            width=180,
-            height=45,
-            command=self.criar_menu_principal,
-            font=ctk.CTkFont(size=13, weight="bold"),
-            fg_color="#95a5a6"
-        ).pack(side="left", padx=5)
-    
     def tela_listar_pecas(self):
         """Tela de listagem de peças - MELHORADA COM FILTROS"""
         self.limpar_tela()
@@ -1732,99 +1550,9 @@ class TelaPrincipal:
             fg_color="#95a5a6"
         ).pack(pady=10)
     
-    def aplicar_filtros_lista(self, data: str, status: str, tabview):
-        """Aplica filtros na lista de peças"""
-        try:
-            # Converter data se fornecida
-            data_filtro = None
-            if data:
-                try:
-                    data_obj = datetime.strptime(data, "%d/%m/%Y")
-                    data_filtro = data_obj.strftime("%Y-%m-%d")
-                except ValueError:
-                    messagebox.showerror("Erro", "Formato de data inválido! Use DD/MM/AAAA")
-                    return
-            
-            # Filtrar peças
-            pecas_filtradas_aprovadas = []
-            pecas_filtradas_reprovadas = []
-            
-            if status in ["Todos", "Aprovadas"]:
-                for peca in self.db.pecas_aprovadas:
-                    if not data_filtro or peca.data_inspecao == data_filtro:
-                        pecas_filtradas_aprovadas.append(peca)
-            
-            if status in ["Todos", "Reprovadas"]:
-                for peca in self.db.pecas_reprovadas:
-                    if not data_filtro or peca.data_inspecao == data_filtro:
-                        pecas_filtradas_reprovadas.append(peca)
-            
-            # Atualizar abas
-            for tab in tabview._tab_dict.values():
-                for widget in tab.winfo_children():
-                    widget.destroy()
-            
-            self.criar_lista_pecas(tabview._tab_dict["✅ Aprovadas"], pecas_filtradas_aprovadas, "aprovadas")
-            self.criar_lista_pecas(tabview._tab_dict["❌ Reprovadas"], pecas_filtradas_reprovadas, "reprovadas")
-            
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao aplicar filtros: {str(e)}")
-    
-    def criar_lista_pecas(self, parent, pecas: List[Peca], tipo: str):
-        """Cria lista de peças em um frame - MELHORADA"""
-        # Frame com scroll
-        frame = ctk.CTkScrollableFrame(parent)
-        frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        if not pecas:
-            ctk.CTkLabel(
-                frame,
-                text=f"Nenhuma peça {tipo} encontrada.",
-                font=ctk.CTkFont(size=14),
-                text_color="#666666"
-            ).pack(pady=50)
-            return
-        
-        # Cabeçalho
-        header_frame = ctk.CTkFrame(frame, fg_color="#34495e")
-        header_frame.pack(fill="x", pady=(0, 10))
-        
-        headers = ["ID", "Peso", "Cor", "Comprimento", "Turno", "Inspetor", "Data"]
-        for i, header in enumerate(headers):
-            ctk.CTkLabel(
-                header_frame,
-                text=header,
-                font=ctk.CTkFont(size=12, weight="bold"),
-                text_color="white"
-            ).grid(row=0, column=i, padx=10, pady=8, sticky="w")
-            header_frame.columnconfigure(i, weight=1)
-        
-        # Lista de peças
-        for idx, peca in enumerate(pecas[-100:], 1):  # Mostrar últimas 100
-            row_frame = ctk.CTkFrame(frame, fg_color="#f8f9fa" if idx % 2 == 0 else "white")
-            row_frame.pack(fill="x", pady=2)
-            
-            dados = [
-                peca.id_peca,
-                f"{peca.peso}g",
-                peca.cor.title(),
-                f"{peca.comprimento}cm",
-                peca.turno,
-                peca.usuario,
-                peca.timestamp.split()[0]  # Apenas a data
-            ]
-            
-            for i, dado in enumerate(dados):
-                ctk.CTkLabel(
-                    row_frame,
-                    text=dado,
-                    font=ctk.CTkFont(size=11),
-                    text_color="#2c3e50"
-                ).grid(row=0, column=i, padx=10, pady=6, sticky="w")
-                row_frame.columnconfigure(i, weight=1)
     
     def tela_gestao_usuarios(self):
-        """Tela de gestão de usuários - NOVA"""
+        """Tela de gestão de usuários - CORRIGIDA E MELHORADA"""
         if self.info_usuario['nivel'] != 'administrador':
             messagebox.showerror("Acesso Negado", "Apenas administradores podem acessar esta funcionalidade!")
             return
@@ -1835,124 +1563,165 @@ class TelaPrincipal:
         main_frame = ctk.CTkFrame(self.frame_principal)
         main_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
-        # Frame de lista de usuários
+        # Frame de botões superiores
+        botoes_superiores = ctk.CTkFrame(main_frame)
+        botoes_superiores.pack(fill="x", padx=10, pady=10)
+        
+        # Botão para novo usuário
+        btn_novo = ctk.CTkButton(
+            botoes_superiores,
+            text="➕ Novo Usuário",
+            width=150,
+            height=40,
+            command=self.criar_novo_usuario,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            fg_color="#27ae60",
+            hover_color="#219a52"
+        )
+        btn_novo.pack(side="left", padx=5)
+        
+        # Botão para recarregar lista
+        btn_recarregar = ctk.CTkButton(
+            botoes_superiores,
+            text="🔄 Recarregar",
+            width=120,
+            height=40,
+            command=lambda: self.atualizar_lista_usuarios(scroll_frame),
+            font=ctk.CTkFont(size=13),
+            fg_color="#3498db",
+            hover_color="#2980b9"
+        )
+        btn_recarregar.pack(side="left", padx=5)
+        
+        # Frame da lista de usuários
         lista_frame = ctk.CTkFrame(main_frame)
         lista_frame.pack(fill="both", expand=True, padx=10, pady=10)
         
         # Título
         ctk.CTkLabel(
             lista_frame,
-            text="Usuários do Sistema:",
+            text="Lista de Usuários do Sistema:",
             font=ctk.CTkFont(size=16, weight="bold")
         ).pack(pady=10)
         
-        # Lista de usuários
+        # Container scrollable para a lista
+        scroll_frame = ctk.CTkScrollableFrame(lista_frame, height=400)
+        scroll_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # Carregar lista inicial
+        self.atualizar_lista_usuarios(scroll_frame)
+        
+        # Botão voltar
+        ctk.CTkButton(
+            main_frame,
+            text="🔙 Voltar ao Menu",
+            width=200,
+            height=45,
+            command=self.criar_menu_principal,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#95a5a6"
+        ).pack(pady=10)
+    
+    def atualizar_lista_usuarios(self, scroll_frame: ctk.CTkScrollableFrame):
+        """Atualiza a lista de usuários no frame"""
+        # Limpar frame
+        for widget in scroll_frame.winfo_children():
+            widget.destroy()
+        
+        # Obter lista de usuários
         usuarios = self.auth.listar_usuarios()
         
         if not usuarios:
             ctk.CTkLabel(
-                lista_frame,
+                scroll_frame,
                 text="Nenhum usuário cadastrado.",
                 font=ctk.CTkFont(size=14),
                 text_color="#666666"
             ).pack(pady=50)
-        else:
-            # Cabeçalho
-            header_frame = ctk.CTkFrame(lista_frame, fg_color="#34495e")
-            header_frame.pack(fill="x", pady=(0, 10))
+            return
+        
+        # Cabeçalho
+        header_frame = ctk.CTkFrame(scroll_frame, fg_color="#34495e")
+        header_frame.pack(fill="x", pady=(0, 10))
+        
+        headers = ["Usuário", "Nome Completo", "Nível", "Status", "Último Login", "Ações"]
+        for i, header in enumerate(headers):
+            ctk.CTkLabel(
+                header_frame,
+                text=header,
+                font=ctk.CTkFont(size=11, weight="bold"),
+                text_color="white"
+            ).grid(row=0, column=i, padx=8, pady=8, sticky="w")
+            header_frame.columnconfigure(i, weight=1 if i < len(headers)-1 else 0)
+        
+        # Lista de usuários
+        for idx, usuario in enumerate(usuarios):
+            row_frame = ctk.CTkFrame(scroll_frame, fg_color="#f8f9fa" if idx % 2 == 0 else "white")
+            row_frame.pack(fill="x", pady=2)
             
-            headers = ["Usuário", "Nome Completo", "Nível", "Status", "Último Login", "Ações"]
-            for i, header in enumerate(headers):
+            # Dados do usuário
+            dados = [
+                usuario['usuario'],
+                usuario['nome_completo'],
+                usuario['nivel'].title(),
+                "✅ Ativo" if usuario['ativo'] else "❌ Inativo",
+                usuario['ultimo_login'] if usuario['ultimo_login'] != 'Nunca' else 'Nunca'
+            ]
+            
+            for i, dado in enumerate(dados):
                 ctk.CTkLabel(
-                    header_frame,
-                    text=header,
-                    font=ctk.CTkFont(size=11, weight="bold"),
-                    text_color="white"
+                    row_frame,
+                    text=dado,
+                    font=ctk.CTkFont(size=10),
+                    text_color="#2c3e50"
                 ).grid(row=0, column=i, padx=8, pady=6, sticky="w")
-                header_frame.columnconfigure(i, weight=1)
+                row_frame.columnconfigure(i, weight=1 if i < len(dados)-1 else 0)
             
-            # Lista de usuários
-            scroll_frame = ctk.CTkScrollableFrame(lista_frame, height=300)
-            scroll_frame.pack(fill="both", expand=True, pady=10)
+            # Botões de ação
+            btn_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
+            btn_frame.grid(row=0, column=5, padx=8, pady=6, sticky="e")
             
-            for idx, usuario in enumerate(usuarios):
-                row_frame = ctk.CTkFrame(scroll_frame, fg_color="#f8f9fa" if idx % 2 == 0 else "white")
-                row_frame.pack(fill="x", pady=1)
-                
-                # Dados do usuário
-                dados = [
-                    usuario['usuario'],
-                    usuario['nome_completo'],
-                    usuario['nivel'].title(),
-                    "✅ Ativo" if usuario['ativo'] else "❌ Inativo",
-                    usuario['ultimo_login']
-                ]
-                
-                for i, dado in enumerate(dados):
-                    ctk.CTkLabel(
-                        row_frame,
-                        text=dado,
-                        font=ctk.CTkFont(size=10),
-                        text_color="#2c3e50"
-                    ).grid(row=0, column=i, padx=8, pady=4, sticky="w")
-                    row_frame.columnconfigure(i, weight=1)
-                
-                # Botões de ação
-                btn_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
-                btn_frame.grid(row=0, column=5, padx=8, pady=4, sticky="e")
-                
+            # Botão editar
+            ctk.CTkButton(
+                btn_frame,
+                text="✏️ Editar",
+                width=80,
+                height=30,
+                command=lambda u=usuario: self.editar_usuario(u),
+                font=ctk.CTkFont(size=10),
+                fg_color="#3498db",
+                hover_color="#2980b9"
+            ).pack(side="left", padx=2)
+            
+            # Botão excluir (não mostrar para admin principal)
+            if usuario['usuario'] != 'admin':
                 ctk.CTkButton(
                     btn_frame,
-                    text="✏️",
-                    width=30,
-                    height=25,
-                    command=lambda u=usuario: self.editar_usuario(u),
+                    text="🗑️ Excluir",
+                    width=80,
+                    height=30,
+                    command=lambda u=usuario: self.excluir_usuario(u),
                     font=ctk.CTkFont(size=10),
-                    fg_color="#3498db"
+                    fg_color="#e74c3c",
+                    hover_color="#c0392b"
                 ).pack(side="left", padx=2)
-                
-                if usuario['usuario'] != 'admin':  # Não permitir excluir admin
-                    ctk.CTkButton(
-                        btn_frame,
-                        text="🗑️",
-                        width=30,
-                        height=25,
-                        command=lambda u=usuario: self.excluir_usuario(u),
-                        font=ctk.CTkFont(size=10),
-                        fg_color="#e74c3c"
-                    ).pack(side="left", padx=2)
-        
-        # Botões de ação
-        btn_acao_frame = ctk.CTkFrame(main_frame)
-        btn_acao_frame.pack(pady=10)
-        
-        ctk.CTkButton(
-            btn_acao_frame,
-            text="➕ Novo Usuário",
-            width=150,
-            height=45,
-            command=self.criar_novo_usuario,
-            font=ctk.CTkFont(size=13, weight="bold"),
-            fg_color="#27ae60"
-        ).pack(side="left", padx=10)
-        
-        ctk.CTkButton(
-            btn_acao_frame,
-            text="🔙 Voltar",
-            width=150,
-            height=45,
-            command=self.criar_menu_principal,
-            font=ctk.CTkFont(size=13, weight="bold"),
-            fg_color="#95a5a6"
-        ).pack(side="left", padx=10)
     
     def criar_novo_usuario(self):
-        """Cria interface para novo usuário"""
+        """Cria interface para novo usuário - MELHORADA"""
         janela = ctk.CTkToplevel(self.root)
-        janela.title("Novo Usuário")
-        janela.geometry("400x500")
+        janela.title("Cadastrar Novo Usuário")
+        janela.geometry("500x600")
         janela.transient(self.root)
         janela.grab_set()
+        janela.resizable(False, False)
+        
+        # Centralizar janela
+        janela.update_idletasks()
+        width = 500
+        height = 600
+        x = (janela.winfo_screenwidth() // 2) - (width // 2)
+        y = (janela.winfo_screenheight() // 2) - (height // 2)
+        janela.geometry(f'{width}x{height}+{x}+{y}')
         
         frame = ctk.CTkFrame(janela)
         frame.pack(fill="both", expand=True, padx=20, pady=20)
@@ -1960,35 +1729,59 @@ class TelaPrincipal:
         ctk.CTkLabel(
             frame,
             text="Cadastrar Novo Usuário",
-            font=ctk.CTkFont(size=18, weight="bold")
+            font=ctk.CTkFont(size=20, weight="bold")
         ).pack(pady=20)
         
         # Campos
-        ctk.CTkLabel(frame, text="Usuário:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        entry_usuario = ctk.CTkEntry(frame, width=300, height=40)
-        entry_usuario.pack(fill="x", pady=5)
+        campos_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        campos_frame.pack(fill="both", expand=True, pady=10)
         
-        ctk.CTkLabel(frame, text="Senha:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        entry_senha = ctk.CTkEntry(frame, width=300, height=40, show="●")
+        # Usuário
+        ctk.CTkLabel(campos_frame, text="Usuário*:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
+        entry_usuario = ctk.CTkEntry(campos_frame, width=400, height=45, placeholder_text="Nome de usuário para login")
+        entry_usuario.pack(fill="x", pady=5)
+        entry_usuario.focus()
+        
+        # Senha
+        ctk.CTkLabel(campos_frame, text="Senha*:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(15, 5))
+        entry_senha = ctk.CTkEntry(campos_frame, width=400, height=45, show="●", placeholder_text="Mínimo 4 caracteres")
         entry_senha.pack(fill="x", pady=5)
         
-        ctk.CTkLabel(frame, text="Nome Completo:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        entry_nome = ctk.CTkEntry(frame, width=300, height=40)
+        # Nome Completo
+        ctk.CTkLabel(campos_frame, text="Nome Completo*:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(15, 5))
+        entry_nome = ctk.CTkEntry(campos_frame, width=400, height=45, placeholder_text="Nome completo do usuário")
         entry_nome.pack(fill="x", pady=5)
         
-        ctk.CTkLabel(frame, text="Nível:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        combo_nivel = ctk.CTkComboBox(frame, width=300, height=40, values=["operador", "administrador"])
+        # Nível
+        ctk.CTkLabel(campos_frame, text="Nível de Acesso*:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(15, 5))
+        combo_nivel = ctk.CTkComboBox(campos_frame, width=400, height=45, values=["operador", "administrador"])
         combo_nivel.set("operador")
         combo_nivel.pack(fill="x", pady=5)
+        
+        # Status
+        var_ativo = ctk.BooleanVar(value=True)
+        switch_ativo = ctk.CTkSwitch(
+            campos_frame, 
+            text="Usuário Ativo", 
+            variable=var_ativo,
+            font=ctk.CTkFont(size=14)
+        )
+        switch_ativo.pack(anchor="w", pady=15)
         
         def salvar_usuario():
             usuario = entry_usuario.get().strip()
             senha = entry_senha.get()
             nome = entry_nome.get().strip()
             nivel = combo_nivel.get()
+            ativo = var_ativo.get()
             
+            # Validações
             if not usuario or not senha or not nome:
-                messagebox.showerror("Erro", "Todos os campos são obrigatórios!")
+                messagebox.showerror("Erro", "Todos os campos marcados com * são obrigatórios!")
+                return
+            
+            if len(senha) < 4:
+                messagebox.showerror("Erro", "A senha deve ter pelo menos 4 caracteres!")
                 return
             
             sucesso, mensagem = self.auth.criar_usuario(usuario, senha, nome, nivel)
@@ -1999,64 +1792,97 @@ class TelaPrincipal:
             else:
                 messagebox.showerror("Erro", mensagem)
         
+        # Botões
+        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        btn_frame.pack(pady=20)
+        
         ctk.CTkButton(
-            frame,
+            btn_frame,
             text="💾 Salvar Usuário",
             width=200,
-            height=45,
+            height=50,
             command=salvar_usuario,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#27ae60"
-        ).pack(pady=30)
+            fg_color="#27ae60",
+            hover_color="#219a52"
+        ).pack(side="left", padx=10)
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="❌ Cancelar",
+            width=200,
+            height=50,
+            command=janela.destroy,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#95a5a6",
+            hover_color="#7f8c8d"
+        ).pack(side="left", padx=10)
     
     def editar_usuario(self, usuario_data: Dict):
-        """Edita um usuário existente"""
+        """Edita um usuário existente - MELHORADA"""
         janela = ctk.CTkToplevel(self.root)
-        janela.title("Editar Usuário")
-        janela.geometry("400x500")
+        janela.title(f"Editar Usuário - {usuario_data['usuario']}")
+        janela.geometry("500x650")
         janela.transient(self.root)
         janela.grab_set()
+        janela.resizable(False, False)
+        
+        # Centralizar janela
+        janela.update_idletasks()
+        width = 500
+        height = 650
+        x = (janela.winfo_screenwidth() // 2) - (width // 2)
+        y = (janela.winfo_screenheight() // 2) - (height // 2)
+        janela.geometry(f'{width}x{height}+{x}+{y}')
         
         frame = ctk.CTkFrame(janela)
         frame.pack(fill="both", expand=True, padx=20, pady=20)
         
         ctk.CTkLabel(
             frame,
-            text="Editar Usuário",
-            font=ctk.CTkFont(size=18, weight="bold")
+            text=f"Editar Usuário: {usuario_data['usuario']}",
+            font=ctk.CTkFont(size=20, weight="bold")
         ).pack(pady=20)
         
         # Campos
-        ctk.CTkLabel(frame, text="Usuário:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        entry_usuario = ctk.CTkEntry(frame, width=300, height=40)
+        campos_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        campos_frame.pack(fill="both", expand=True, pady=10)
+        
+        # Usuário
+        ctk.CTkLabel(campos_frame, text="Usuário*:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
+        entry_usuario = ctk.CTkEntry(campos_frame, width=400, height=45)
         entry_usuario.insert(0, usuario_data['usuario'])
         entry_usuario.pack(fill="x", pady=5)
         
-        ctk.CTkLabel(frame, text="Nome Completo:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        entry_nome = ctk.CTkEntry(frame, width=300, height=40)
+        # Nome Completo
+        ctk.CTkLabel(campos_frame, text="Nome Completo*:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(15, 5))
+        entry_nome = ctk.CTkEntry(campos_frame, width=400, height=45)
         entry_nome.insert(0, usuario_data['nome_completo'])
         entry_nome.pack(fill="x", pady=5)
         
-        ctk.CTkLabel(frame, text="Nível:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(10, 5))
-        combo_nivel = ctk.CTkComboBox(frame, width=300, height=40, values=["operador", "administrador"])
+        # Nível
+        ctk.CTkLabel(campos_frame, text="Nível de Acesso*:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(15, 5))
+        combo_nivel = ctk.CTkComboBox(campos_frame, width=400, height=45, values=["operador", "administrador"])
         combo_nivel.set(usuario_data['nivel'])
         combo_nivel.pack(fill="x", pady=5)
         
+        # Status
         var_ativo = ctk.BooleanVar(value=usuario_data['ativo'])
         switch_ativo = ctk.CTkSwitch(
-            frame, 
+            campos_frame, 
             text="Usuário Ativo", 
             variable=var_ativo,
             font=ctk.CTkFont(size=14)
         )
-        switch_ativo.pack(anchor="w", pady=10)
+        switch_ativo.pack(anchor="w", pady=15)
         
         # Frame para redefinir senha
-        senha_frame = ctk.CTkFrame(frame)
+        senha_frame = ctk.CTkFrame(campos_frame)
         senha_frame.pack(fill="x", pady=10)
         
         ctk.CTkLabel(senha_frame, text="Redefinir Senha:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w")
-        entry_nova_senha = ctk.CTkEntry(senha_frame, width=300, height=40, show="●", placeholder_text="Deixe em branco para manter a senha atual")
+        ctk.CTkLabel(senha_frame, text="Deixe em branco para manter a senha atual", font=ctk.CTkFont(size=11), text_color="#666666").pack(anchor="w")
+        entry_nova_senha = ctk.CTkEntry(senha_frame, width=400, height=45, show="●", placeholder_text="Nova senha (mínimo 4 caracteres)")
         entry_nova_senha.pack(fill="x", pady=5)
         
         def salvar_edicao():
@@ -2066,8 +1892,13 @@ class TelaPrincipal:
             ativo = var_ativo.get()
             nova_senha = entry_nova_senha.get()
             
+            # Validações
             if not usuario_novo or not nome:
                 messagebox.showerror("Erro", "Usuário e nome são obrigatórios!")
+                return
+            
+            if nova_senha and len(nova_senha) < 4:
+                messagebox.showerror("Erro", "A senha deve ter pelo menos 4 caracteres!")
                 return
             
             # Primeiro, editar os dados básicos
@@ -2083,31 +1914,53 @@ class TelaPrincipal:
             if nova_senha:
                 sucesso_senha, mensagem_senha = self.auth.redefinir_senha(usuario_novo, nova_senha)
                 if not sucesso_senha:
-                    messagebox.showerror("Erro", f"Dados salvos, mas erro na senha: {mensagem_senha}")
+                    messagebox.showwarning("Aviso", f"Dados salvos, mas erro na senha: {mensagem_senha}")
+                else:
+                    messagebox.showinfo("Sucesso", "Usuário e senha atualizados com sucesso!")
+            else:
+                messagebox.showinfo("Sucesso", "Usuário atualizado com sucesso!")
             
-            messagebox.showinfo("Sucesso", "Usuário atualizado com sucesso!")
             janela.destroy()
             self.tela_gestao_usuarios()  # Recarregar a tela
         
+        # Botões
+        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
+        btn_frame.pack(pady=20)
+        
         ctk.CTkButton(
-            frame,
+            btn_frame,
             text="💾 Salvar Alterações",
             width=200,
-            height=45,
+            height=50,
             command=salvar_edicao,
             font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#3498db"
-        ).pack(pady=20)
+            fg_color="#3498db",
+            hover_color="#2980b9"
+        ).pack(side="left", padx=10)
+        
+        ctk.CTkButton(
+            btn_frame,
+            text="❌ Cancelar",
+            width=200,
+            height=50,
+            command=janela.destroy,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#95a5a6",
+            hover_color="#7f8c8d"
+        ).pack(side="left", padx=10)
     
     def excluir_usuario(self, usuario_data: Dict):
-        """Exclui um usuário"""
+        """Exclui um usuário - MELHORADA"""
         if usuario_data['usuario'] == self.usuario:
             messagebox.showerror("Erro", "Você não pode excluir seu próprio usuário!")
             return
         
         resposta = messagebox.askyesno(
             "Confirmar Exclusão",
-            f"Tem certeza que deseja excluir o usuário {usuario_data['usuario']}?\n\nEsta ação não pode ser desfeita!"
+            f"Tem certeza que deseja excluir o usuário {usuario_data['usuario']}?\n\n"
+            f"Nome: {usuario_data['nome_completo']}\n"
+            f"Nível: {usuario_data['nivel'].title()}\n\n"
+            f"⚠️  ESTA AÇÃO NÃO PODE SER DESFEITA!"
         )
         
         if resposta:
@@ -2117,314 +1970,9 @@ class TelaPrincipal:
                 self.tela_gestao_usuarios()  # Recarregar a tela
             else:
                 messagebox.showerror("Erro", mensagem)
-    
-    def tela_relatorios_avancados(self):
-        """Tela de relatórios avançados - NOVA"""
-        if self.info_usuario['nivel'] != 'administrador':
-            messagebox.showerror("Acesso Negado", "Apenas administradores podem acessar esta funcionalidade!")
-            return
-        
-        self.limpar_tela()
-        self.criar_header("📊 Relatórios Avançados")
-        
-        main_frame = ctk.CTkFrame(self.frame_principal)
-        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Frame de filtros
-        filtros_frame = ctk.CTkFrame(main_frame)
-        filtros_frame.pack(fill="x", padx=10, pady=10)
-        
-        ctk.CTkLabel(
-            filtros_frame,
-            text="Filtros do Relatório:",
-            font=ctk.CTkFont(size=14, weight="bold")
-        ).pack(anchor="w", pady=10)
-        
-        # Filtro por data
-        data_frame = ctk.CTkFrame(filtros_frame, fg_color="transparent")
-        data_frame.pack(fill="x", pady=5)
-        
-        ctk.CTkLabel(data_frame, text="Data Início:").pack(side="left", padx=(0, 10))
-        entry_data_inicio = ctk.CTkEntry(data_frame, width=120, height=35, placeholder_text="DD/MM/AAAA")
-        # Definir data padrão como hoje
-        hoje = datetime.now().strftime("%d/%m/%Y")
-        entry_data_inicio.insert(0, hoje)
-        entry_data_inicio.pack(side="left", padx=(0, 20))
-        
-        ctk.CTkLabel(data_frame, text="Data Fim:").pack(side="left", padx=(0, 10))
-        entry_data_fim = ctk.CTkEntry(data_frame, width=120, height=35, placeholder_text="DD/MM/AAAA")
-        entry_data_fim.insert(0, hoje)
-        entry_data_fim.pack(side="left")
-        
-        # Filtro por usuário
-        usuario_frame = ctk.CTkFrame(filtros_frame, fg_color="transparent")
-        usuario_frame.pack(fill="x", pady=10)
-        
-        ctk.CTkLabel(usuario_frame, text="Usuário:").pack(side="left", padx=(0, 10))
-        
-        # Obter lista de usuários
-        usuarios = self.auth.listar_usuarios()
-        nomes_usuarios = [u['usuario'] for u in usuarios]
-        
-        combo_usuario = ctk.CTkComboBox(
-            usuario_frame,
-            width=200,
-            height=35,
-            values=["Todos"] + nomes_usuarios
-        )
-        # Definir usuário atual como padrão
-        combo_usuario.set(self.usuario)
-        combo_usuario.pack(side="left")
-        
-        # Botão gerar relatório
-        btn_gerar = ctk.CTkButton(
-            filtros_frame,
-            text="📊 Gerar Relatório",
-            width=150,
-            height=40,
-            command=lambda: self.gerar_relatorio_filtrado(
-                entry_data_inicio.get(),
-                entry_data_fim.get(),
-                combo_usuario.get(),
-                relatorio_frame
-            ),
-            font=ctk.CTkFont(size=13, weight="bold"),
-            fg_color="#9b59b6"
-        )
-        btn_gerar.pack(pady=10)
-        
-        # Frame do relatório
-        relatorio_frame = ctk.CTkFrame(main_frame)
-        relatorio_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Mensagem inicial
-        ctk.CTkLabel(
-            relatorio_frame,
-            text="Clique em 'Gerar Relatório' para visualizar os dados",
-            font=ctk.CTkFont(size=14),
-            text_color="#666666"
-        ).pack(pady=50)
-        
-        # Botão voltar
-        ctk.CTkButton(
-            main_frame,
-            text="🔙 Voltar ao Menu",
-            width=200,
-            height=45,
-            command=self.criar_menu_principal,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#95a5a6"
-        ).pack(pady=10)
-    
-    def gerar_relatorio_filtrado(self, data_inicio: str, data_fim: str, usuario: str, relatorio_frame: ctk.CTkFrame):
-        """Gera relatório com filtros aplicados"""
-        try:
-            # Converter datas
-            data_i = None
-            data_f = None
-            
-            if data_inicio:
-                try:
-                    data_i = datetime.strptime(data_inicio, "%d/%m/%Y").strftime("%Y-%m-%d")
-                except ValueError:
-                    messagebox.showerror("Erro", "Formato de data início inválido! Use DD/MM/AAAA")
-                    return
-            
-            if data_fim:
-                try:
-                    data_f = datetime.strptime(data_fim, "%d/%m/%Y").strftime("%Y-%m-%d")
-                except ValueError:
-                    messagebox.showerror("Erro", "Formato de data fim inválido! Use DD/MM/AAAA")
-                    return
-            
-            # Ajustar usuário
-            usuario_filtro = usuario if usuario != "Todos" else None
-            
-            # Gerar relatório
-            relatorio = self.db.gerar_relatorio(data_i, data_f, usuario_filtro)
-            
-            # Limpar frame
-            for widget in relatorio_frame.winfo_children():
-                widget.destroy()
-            
-            # Exibir relatório
-            text_relatorio = ctk.CTkTextbox(relatorio_frame, font=ctk.CTkFont(size=11))
-            text_relatorio.pack(fill="both", expand=True, padx=10, pady=10)
-            
-            relatorio_formatado = self.formatar_relatorio(relatorio)
-            text_relatorio.insert("1.0", relatorio_formatado)
-            text_relatorio.configure(state="disabled")
-            
-            # Botões de exportação
-            btn_export_frame = ctk.CTkFrame(relatorio_frame)
-            btn_export_frame.pack(pady=10)
-            
-            def exportar_json():
-                try:
-                    caminho = filedialog.asksaveasfilename(
-                        defaultextension=".json",
-                        filetypes=[("JSON files", "*.json")],
-                        initialfile=f"relatorio_filtrado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-                    )
-                    if caminho:
-                        with open(caminho, 'w', encoding='utf-8') as f:
-                            json.dump(relatorio, f, indent=2, ensure_ascii=False)
-                        messagebox.showinfo("Sucesso", f"Relatório exportado:\n{caminho}")
-                except Exception as e:
-                    messagebox.showerror("Erro", f"Erro ao exportar JSON: {e}")
-            
-            def exportar_csv():
-                try:
-                    caminho = filedialog.asksaveasfilename(
-                        defaultextension=".csv",
-                        filetypes=[("CSV files", "*.csv")],
-                        initialfile=f"relatorio_filtrado_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-                    )
-                    if caminho:
-                        with open(caminho, 'w', newline='', encoding='utf-8') as f:
-                            writer = csv.writer(f, delimiter=';')
-                            writer.writerow(['ID', 'Peso (g)', 'Cor', 'Comprimento (cm)', 'Status', 'Inspetor', 'Turno', 'Data', 'Motivos'])
-                            
-                            # Obter peças filtradas
-                            pecas_filtradas = self.db.buscar_pecas_por_filtro(
-                                data_i, data_f, usuario_filtro
-                            )
-                            
-                            for peca in pecas_filtradas:
-                                status = 'APROVADA' if peca.aprovada else 'REPROVADA'
-                                motivos = ' | '.join(peca.motivos_reprovacao) if not peca.aprovada else ''
-                                writer.writerow([
-                                    peca.id_peca, peca.peso, peca.cor, peca.comprimento, 
-                                    status, peca.usuario, peca.turno, peca.data_inspecao, motivos
-                                ])
-                        
-                        messagebox.showinfo("Sucesso", f"Relatório exportado:\n{caminho}")
-                except Exception as e:
-                    messagebox.showerror("Erro", f"Erro ao exportar CSV: {e}")
-            
-            ctk.CTkButton(
-                btn_export_frame,
-                text="💾 Exportar JSON",
-                width=150,
-                height=40,
-                command=exportar_json,
-                font=ctk.CTkFont(size=12),
-                fg_color="#2ecc71"
-            ).pack(side="left", padx=5)
-            
-            ctk.CTkButton(
-                btn_export_frame,
-                text="📄 Exportar CSV",
-                width=150,
-                height=40,
-                command=exportar_csv,
-                font=ctk.CTkFont(size=12),
-                fg_color="#27ae60"
-            ).pack(side="left", padx=5)
-            
-        except Exception as e:
-            messagebox.showerror("Erro", f"Erro ao gerar relatório: {str(e)}")
-    
-    # ... (mantenha as outras funções existentes como tela_listar_caixas, tela_configuracoes, etc.)
-    
-    def tela_listar_caixas(self):
-        """Tela de listagem de caixas - MELHORADA"""
-        self.limpar_tela()
-        self.criar_header("📦 Gerenciar Caixas")
-        
-        content_frame = ctk.CTkFrame(self.frame_principal)
-        content_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Caixa atual
-        ctk.CTkLabel(
-            content_frame,
-            text="📦 Caixa Atual em Produção:",
-            font=ctk.CTkFont(size=16, weight="bold")
-        ).pack(pady=10)
-        
-        info_frame = ctk.CTkFrame(content_frame, fg_color="#3498db", height=120, corner_radius=10)
-        info_frame.pack(fill="x", padx=20, pady=10)
-        info_frame.pack_propagate(False)
-        
-        ctk.CTkLabel(
-            info_frame,
-            text=f"Caixa #{self.db.caixa_atual.numero}",
-            font=ctk.CTkFont(size=22, weight="bold"),
-            text_color="white"
-        ).pack(pady=5)
-        
-        progresso = (len(self.db.caixa_atual.pecas) / self.db.caixa_atual.capacidade) * 100
-        ctk.CTkLabel(
-            info_frame,
-            text=f"Progresso: {len(self.db.caixa_atual.pecas)}/{self.db.caixa_atual.capacidade} peças ({progresso:.1f}%)",
-            font=ctk.CTkFont(size=14),
-            text_color="white"
-        ).pack(pady=2)
-        
-        ctk.CTkLabel(
-            info_frame,
-            text=f"Vagas disponíveis: {self.db.caixa_atual.vagas_disponiveis()}",
-            font=ctk.CTkFont(size=12),
-            text_color="#e0e0e0"
-        ).pack(pady=2)
-        
-        # Caixas fechadas
-        ctk.CTkLabel(
-            content_frame,
-            text="📦 Caixas Fechadas e Completas:",
-            font=ctk.CTkFont(size=16, weight="bold")
-        ).pack(pady=20)
-        
-        if not self.db.caixas_fechadas:
-            ctk.CTkLabel(
-                content_frame,
-                text="Nenhuma caixa fechada ainda.",
-                font=ctk.CTkFont(size=14),
-                text_color="#666666"
-            ).pack(pady=50)
-        else:
-            # Lista de caixas fechadas
-            scroll_frame = ctk.CTkScrollableFrame(content_frame, height=300)
-            scroll_frame.pack(fill="both", expand=True, padx=20, pady=10)
-            
-            for caixa in self.db.caixas_fechadas[-20:]:  # Últimas 20 caixas
-                caixa_frame = ctk.CTkFrame(scroll_frame, fg_color="#ecf0f1")
-                caixa_frame.pack(fill="x", pady=5, padx=5)
-                
-                # Header da caixa
-                header_caixa = ctk.CTkFrame(caixa_frame, fg_color="#34495e")
-                header_caixa.pack(fill="x", padx=2, pady=2)
-                
-                ctk.CTkLabel(
-                    header_caixa,
-                    text=f"📦 Caixa #{caixa.numero} - {len(caixa.pecas)} peças - Fechada em: {caixa.data_fechamento}",
-                    font=ctk.CTkFont(size=12, weight="bold"),
-                    text_color="white"
-                ).pack(pady=8, padx=10, anchor="w")
-                
-                # Peças da caixa
-                pecas_text = ", ".join([p.id_peca for p in caixa.pecas])
-                ctk.CTkLabel(
-                    caixa_frame,
-                    text=f"Peças: {pecas_text}",
-                    font=ctk.CTkFont(size=10),
-                    text_color="#2c3e50",
-                    wraplength=800
-                ).pack(pady=5, padx=10, anchor="w")
-        
-        # Botão voltar
-        ctk.CTkButton(
-            content_frame,
-            text="🔙 Voltar ao Menu",
-            width=200,
-            height=45,
-            command=self.criar_menu_principal,
-            font=ctk.CTkFont(size=14, weight="bold"),
-            fg_color="#95a5a6"
-        ).pack(pady=20)
-    
+
     def tela_configuracoes(self):
-        """Tela de configurações do sistema - NOVA"""
+        """Tela de configurações do sistema - MELHORADA COM NOME DO SISTEMA"""
         if self.info_usuario['nivel'] != 'administrador':
             messagebox.showerror("Acesso Negado", "Apenas administradores podem acessar esta funcionalidade!")
             return
@@ -2439,13 +1987,17 @@ class TelaPrincipal:
         tabview = ctk.CTkTabview(content_frame)
         tabview.pack(fill="both", expand=True, padx=10, pady=10)
         
+        # Aba de sistema
+        tab_sistema = tabview.add("🏭 Sistema")
+        self.criar_config_sistema(tab_sistema)
+        
         # Aba de critérios de qualidade
         tab_criterios = tabview.add("🎯 Critérios de Qualidade")
         self.criar_config_criterios(tab_criterios)
         
-        # Aba de sistema
-        tab_sistema = tabview.add("⚙️ Sistema")
-        self.criar_config_sistema(tab_sistema)
+        # Aba de backup
+        tab_backup = tabview.add("💾 Backup")
+        self.criar_config_backup(tab_backup)
         
         # Botão voltar
         ctk.CTkButton(
@@ -2458,12 +2010,70 @@ class TelaPrincipal:
             fg_color="#95a5a6"
         ).pack(pady=10)
     
+    def criar_config_sistema(self, parent):
+        """Cria interface de configuração do sistema - MELHORADA"""
+        frame = ctk.CTkFrame(parent, fg_color="transparent")
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
+        
+        ctk.CTkLabel(
+            frame,
+            text="Configurações Gerais do Sistema:",
+            font=ctk.CTkFont(size=16, weight="bold")
+        ).pack(pady=10)
+        
+        # Nome do sistema
+        ctk.CTkLabel(frame, text="Nome do Sistema:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(20, 5))
+        entry_nome_sistema = ctk.CTkEntry(frame, width=400, height=45)
+        nome_atual = self.config.get('sistema', {}).get('nome_sistema', 'Sistema de Controle de Qualidade Industrial')
+        entry_nome_sistema.insert(0, nome_atual)
+        entry_nome_sistema.pack(anchor="w", pady=5)
+        
+        # Capacidade da caixa
+        ctk.CTkLabel(frame, text="Capacidade de Peças por Caixa:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(20, 5))
+        entry_capacidade = ctk.CTkEntry(frame, width=100)
+        entry_capacidade.insert(0, str(self.config.get('capacidade_caixa', 10)))
+        entry_capacidade.pack(anchor="w", pady=5)
+        
+        def salvar_config_sistema():
+            try:
+                # Atualizar configurações
+                if 'sistema' not in self.config:
+                    self.config['sistema'] = {}
+                
+                self.config['sistema']['nome_sistema'] = entry_nome_sistema.get().strip()
+                self.config['capacidade_caixa'] = int(entry_capacidade.get())
+                
+                ConfiguracaoSistema.salvar_configuracao(self.config)
+                
+                messagebox.showinfo("Sucesso", "Configurações do sistema atualizadas!\n\nO sistema será reiniciado para aplicar as mudanças.")
+                
+                # Reiniciar aplicação
+                self.root.destroy()
+                import os
+                import sys
+                os.execl(sys.executable, sys.executable, *sys.argv)
+                
+            except ValueError:
+                messagebox.showerror("Erro", "Por favor, insira valores numéricos válidos.")
+            except Exception as e:
+                messagebox.showerror("Erro", f"Erro ao salvar configurações: {e}")
+        
+        ctk.CTkButton(
+            frame,
+            text="💾 Salvar Configurações",
+            width=200,
+            height=45,
+            command=salvar_config_sistema,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#3498db"
+        ).pack(pady=30)
+    
     def criar_config_criterios(self, parent):
         """Cria interface de configuração de critérios"""
         frame = ctk.CTkFrame(parent, fg_color="transparent")
         frame.pack(fill="both", expand=True, padx=20, pady=20)
         
-        criterios = self.db.config.get('critérios_qualidade', ConfiguracaoSistema.CONFIG_PADRAO['critérios_qualidade'])
+        criterios = self.config.get('critérios_qualidade', ConfiguracaoSistema.CONFIG_PADRAO['critérios_qualidade'])
         
         ctk.CTkLabel(
             frame,
@@ -2517,8 +2127,8 @@ class TelaPrincipal:
                     'cores_aceitas': [cor.strip().lower() for cor in entry_cores.get().split(',')]
                 }
                 
-                self.db.config['critérios_qualidade'] = novos_criterios
-                ConfiguracaoSistema.salvar_configuracao(self.db.config)
+                self.config['critérios_qualidade'] = novos_criterios
+                ConfiguracaoSistema.salvar_configuracao(self.config)
                 
                 messagebox.showinfo("Sucesso", "Critérios de qualidade atualizados!")
                 
@@ -2537,25 +2147,19 @@ class TelaPrincipal:
             fg_color="#27ae60"
         ).pack(pady=30)
     
-    def criar_config_sistema(self, parent):
-        """Cria interface de configuração do sistema"""
+    def criar_config_backup(self, parent):
+        """Cria interface de configuração de backup"""
         frame = ctk.CTkFrame(parent, fg_color="transparent")
         frame.pack(fill="both", expand=True, padx=20, pady=20)
         
         ctk.CTkLabel(
             frame,
-            text="Configurações do Sistema:",
+            text="Configurações de Backup:",
             font=ctk.CTkFont(size=16, weight="bold")
         ).pack(pady=10)
         
-        # Capacidade da caixa
-        ctk.CTkLabel(frame, text="Capacidade de Peças por Caixa:", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(20, 5))
-        entry_capacidade = ctk.CTkEntry(frame, width=100)
-        entry_capacidade.insert(0, str(self.db.config.get('capacidade_caixa', 10)))
-        entry_capacidade.pack(anchor="w", pady=5)
-        
         # Backup automático
-        var_backup = ctk.BooleanVar(value=self.db.config.get('auto_backup', True))
+        var_backup = ctk.BooleanVar(value=self.config.get('auto_backup', True))
         switch_backup = ctk.CTkSwitch(
             frame, 
             text="Backup Automático", 
@@ -2567,18 +2171,17 @@ class TelaPrincipal:
         # Intervalo de backup
         ctk.CTkLabel(frame, text="Intervalo de Backup (horas):", font=ctk.CTkFont(size=14, weight="bold")).pack(anchor="w", pady=(20, 5))
         entry_intervalo = ctk.CTkEntry(frame, width=100)
-        entry_intervalo.insert(0, str(self.db.config.get('backup_interval_hours', 24)))
+        entry_intervalo.insert(0, str(self.config.get('backup_interval_hours', 24)))
         entry_intervalo.pack(anchor="w", pady=5)
         
-        def salvar_config_sistema():
+        def salvar_config_backup():
             try:
-                self.db.config['capacidade_caixa'] = int(entry_capacidade.get())
-                self.db.config['auto_backup'] = var_backup.get()
-                self.db.config['backup_interval_hours'] = int(entry_intervalo.get())
+                self.config['auto_backup'] = var_backup.get()
+                self.config['backup_interval_hours'] = int(entry_intervalo.get())
                 
-                ConfiguracaoSistema.salvar_configuracao(self.db.config)
+                ConfiguracaoSistema.salvar_configuracao(self.config)
                 
-                messagebox.showinfo("Sucesso", "Configurações do sistema atualizadas!")
+                messagebox.showinfo("Sucesso", "Configurações de backup atualizadas!")
                 
             except ValueError:
                 messagebox.showerror("Erro", "Por favor, insira valores numéricos válidos.")
@@ -2590,73 +2193,24 @@ class TelaPrincipal:
             text="💾 Salvar Configurações",
             width=200,
             height=45,
-            command=salvar_config_sistema,
+            command=salvar_config_backup,
             font=ctk.CTkFont(size=14, weight="bold"),
             fg_color="#3498db"
         ).pack(pady=30)
-    
-    def formatar_relatorio(self, relatorio: Dict) -> str:
-        """Formata o relatório para exibição - MELHORADA"""
-        texto = "="*80 + "\n"
-        texto += "           RELATÓRIO COMPLETO - SISTEMA DE CONTROLE DE QUALIDADE\n"
-        texto += "="*80 + "\n\n"
         
-        texto += f"📅 Data de Geração: {relatorio['data_geracao']}\n"
-        texto += f"👤 Gerado por: {self.info_usuario['nome_completo']} ({self.usuario})\n"
-        
-        # Informações sobre filtros aplicados
-        filtros = relatorio.get('filtros_aplicados', {})
-        if any(filtros.values()):
-            texto += f"🎯 Filtros Aplicados:\n"
-            if filtros.get('data_inicio'):
-                texto += f"   • Data Início: {filtros['data_inicio']}\n"
-            if filtros.get('data_fim'):
-                texto += f"   • Data Fim: {filtros['data_fim']}\n"
-            if filtros.get('usuario'):
-                texto += f"   • Usuário: {filtros['usuario']}\n"
-            texto += "\n"
-        
-        texto += f"🏭 Sistema: Controle de Qualidade Industrial v2.1\n\n"
-        
-        texto += "📈 RESUMO GERAL DA PRODUÇÃO\n"
-        texto += "-"*80 + "\n"
-        texto += f"• Total de Peças Inspecionadas: {relatorio['total_pecas_inspecionadas']:,}\n"
-        texto += f"• ✅ Peças Aprovadas: {relatorio['total_pecas_aprovadas']:,}\n"
-        texto += f"• ❌ Peças Reprovadas: {relatorio['total_pecas_reprovadas']:,}\n"
-        texto += f"• 📊 Taxa de Aprovação: {relatorio['taxa_aprovacao']}%\n"
-        texto += f"• 📦 Caixas Completas: {relatorio['caixas_completas']:,}\n\n"
-        
-        texto += "📦 SITUAÇÃO DA CAIXA ATUAL\n"
-        texto += "-"*80 + "\n"
-        texto += f"• Número: #{relatorio['caixa_atual']['numero']}\n"
-        texto += f"• Peças: {relatorio['caixa_atual']['pecas']}/{relatorio['caixa_atual']['capacidade']}\n"
-        texto += f"• Vagas Disponíveis: {relatorio['caixa_atual']['vagas_disponiveis']}\n"
-        texto += f"• Percentual de Ocupação: {relatorio['caixa_atual']['percentual_cheio']:.1f}%\n\n"
-        
-        if relatorio['estatisticas_turno']:
-            texto += "🕒 ESTATÍSTICAS POR TURNO\n"
-            texto += "-"*80 + "\n"
-            for turno, stats in relatorio['estatisticas_turno'].items():
-                taxa_turno = (stats['aprovadas'] / stats['total'] * 100) if stats['total'] > 0 else 0
-                texto += f"• {turno}: {stats['aprovadas']} aprovadas, {stats['reprovadas']} reprovadas "
-                texto += f"({taxa_turno:.1f}% de aprovação)\n"
-            texto += "\n"
-        
-        if relatorio['analise_motivos_reprovacao']:
-            texto += "❌ ANÁLISE DOS MOTIVOS DE REPROVAÇÃO\n"
-            texto += "-"*80 + "\n"
-            total_reprovacoes = sum(relatorio['analise_motivos_reprovacao'].values())
-            for motivo, quantidade in relatorio['analise_motivos_reprovacao'].items():
-                percentual = (quantidade / total_reprovacoes * 100) if total_reprovacoes > 0 else 0
-                texto += f"• {motivo}: {quantidade} ocorrências ({percentual:.1f}%)\n"
-            texto += "\n"
-        
-        texto += "="*80 + "\n"
-        texto += "Relatório gerado automaticamente - Sistema de Controle de Qualidade v2.1\n"
-        texto += "="*80 + "\n"
-        
-        return texto
-    
+        # Botão para backup manual
+        ctk.CTkButton(
+            frame,
+            text="🔧 Fazer Backup Manual",
+            width=200,
+            height=45,
+            command=self.db.fazer_backup,
+            font=ctk.CTkFont(size=14, weight="bold"),
+            fg_color="#f39c12"
+        ).pack(pady=10)
+
+    # ... (mantenha as outras funções existentes)
+
     def criar_header(self, titulo: str):
         """Cria o header padrão - MELHORADO"""
         header = ctk.CTkFrame(self.frame_principal, fg_color="#1f538d", height=70, corner_radius=10)
@@ -2697,7 +2251,7 @@ class Aplicacao:
     
     def __init__(self):
         # Criar estrutura de pastas
-        if not ConfiguracaoSistema.carregar_configuracao():
+        if not ConfiguracaoSistema.criar_estrutura_pastas():
             messagebox.showerror("Erro", "Não foi possível criar a estrutura de pastas do sistema!")
             return
         
@@ -2725,10 +2279,14 @@ class Aplicacao:
 
 def main():
     """Função principal"""
+    config = ConfiguracaoSistema.carregar_configuracao()
+    nome_sistema = config.get('sistema', {}).get('nome_sistema', 'Sistema de Controle de Qualidade Industrial')
+    versao = config.get('sistema', {}).get('versao', '2.2')
+    
     print("\n" + "="*70)
-    print("  🏭 Sistema de Controle de Qualidade Industrial v2.1")
+    print(f"  🏭 {nome_sistema} v{versao}")
     print("  📊 Automação de Inspeção de Peças - Linha de Montagem")
-    print("  🔧 Versão com Gestão de Usuários e CRUD Completo")
+    print("  🔧 Versão com Gestão de Usuários Corrigida")
     print("="*70 + "\n")
     
     try:
