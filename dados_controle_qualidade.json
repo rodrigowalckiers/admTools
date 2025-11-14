@@ -1,0 +1,54 @@
+{
+  "pecas_aprovadas": [
+    {
+      "id": "006",
+      "peso": 95.0,
+      "cor": "azul",
+      "comprimento": 15.0,
+      "timestamp": "13/11/2025 20:43:52",
+      "aprovada": true,
+      "motivos_reprovacao": []
+    }
+  ],
+  "pecas_reprovadas": [
+    {
+      "id": "0036",
+      "peso": 102.0,
+      "cor": "vermelho",
+      "comprimento": 15.0,
+      "timestamp": "13/11/2025 20:40:48",
+      "aprovada": false,
+      "motivos_reprovacao": [
+        "Cor não aprovada: vermelho (esperado: azul ou verde)"
+      ]
+    },
+    {
+      "id": "006",
+      "peso": 44569.0,
+      "cor": "azul",
+      "comprimento": 11.0,
+      "timestamp": "13/11/2025 20:43:39",
+      "aprovada": false,
+      "motivos_reprovacao": [
+        "Peso fora do padrão: 44569.0g (esperado: 95-105g)"
+      ]
+    }
+  ],
+  "caixas_fechadas": [],
+  "caixa_atual": {
+    "numero": 1,
+    "pecas": [
+      {
+        "id": "006",
+        "peso": 95.0,
+        "cor": "azul",
+        "comprimento": 15.0,
+        "timestamp": "13/11/2025 20:43:52",
+        "aprovada": true,
+        "motivos_reprovacao": []
+      }
+    ],
+    "data_fechamento": null,
+    "quantidade_pecas": 1
+  }
+}
